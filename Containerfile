@@ -95,11 +95,8 @@ RUN --mount=type=cache,dst=/var/cache \
         che/nerd-fonts \
         hikariknight/looking-glass-kvmfr \
         mavit/discover-overlay \
-        lizardbyte/beta \
         rok/cdemu \
-        rodoma92/kde-cdemu-manager \
-        rodoma92/rmlint \
-        ilyaz/LACT; \
+        lizardbyte/beta; \
     do \
         echo "Enabling copr: $copr"; \
         dnf5 -y copr enable $copr; \
@@ -315,6 +312,8 @@ RUN --mount=type=cache,dst=/var/cache \
         waydroid \
         cage \
         wlr-randr && \
+    sed -i 's|uupd|& --disable-module-distrobox|' /usr/lib/systemd/system/uupd.service && \
+    setcap 'cap_sys_admin+p' /usr/bin/sunshine-v* && \
     dnf5 -y --setopt=install_weak_deps=False install \
         rocm-hip \
         rocm-opencl \
@@ -322,8 +321,6 @@ RUN --mount=type=cache,dst=/var/cache \
         rocm-smi && \
     dnf5 -y install \
         $(curl https://api.github.com/repos/bazzite-org/cicpoffs/releases/latest | jq -r '.assets[] | select(.name| test(".*rpm$")).browser_download_url') && \
-    dnf5 -y install \
-        $(curl https://api.github.com/repos/GloriousEggroll/flatpost/releases/latest | jq -r '.assets[] | select(.name| test("[0-9].rpm$")).browser_download_url') && \
     mkdir -p /etc/xdg/autostart && \
     sed -i~ -E 's/=.\$\(command -v (nft|ip6?tables-legacy).*/=/g' /usr/lib/waydroid/data/scripts/waydroid-net.sh && \
     sed -i 's/ --xdg-runtime=\\"${XDG_RUNTIME_DIR}\\"//g' /usr/bin/btrfs-assistant-launcher && \
@@ -427,16 +424,17 @@ RUN --mount=type=cache,dst=/var/cache \
         dnf5 -y remove \
             plasma-welcome \
             plasma-welcome-fedora \
-            plasma-discover \
+            plasma-browser-integration \
             konsole && \
         git clone https://github.com/catsout/wallpaper-engine-kde-plugin.git --depth 1 --branch main /tmp/wallpaper-engine-kde-plugin && \
         kpackagetool6 --type=Plasma/Wallpaper --global --install /tmp/wallpaper-engine-kde-plugin/plugin && \
-        sed -i '/<entry name="launchers" type="StringList">/,/<\/entry>/ s/<default>[^<]*<\/default>/<default>preferred:\/\/browser,applications:steam.desktop,applications:net.lutris.Lutris.desktop,applications:org.gnome.Ptyxis.desktop,applications:com.flatpost.flatpostapp.desktop,preferred:\/\/filemanager<\/default>/' /usr/share/plasma/plasmoids/org.kde.plasma.taskmanager/contents/config/main.xml && \
-        sed -i '/<entry name="favorites" type="StringList">/,/<\/entry>/ s/<default>[^<]*<\/default>/<default>preferred:\/\/browser,steam.desktop,net.lutris.Lutris.desktop,systemsettings.desktop,org.kde.dolphin.desktop,org.kde.kate.desktop,org.gnome.Ptyxis.desktop,com.flatpost.flatpostapp.desktop,system-update.desktop<\/default>/' /usr/share/plasma/plasmoids/org.kde.plasma.kickoff/contents/config/main.xml && \
+        sed -i '/<entry name="launchers" type="StringList">/,/<\/entry>/ s/<default>[^<]*<\/default>/<default>preferred:\/\/browser,applications:steam.desktop,applications:net.lutris.Lutris.desktop,applications:org.gnome.Ptyxis.desktop,applications:org.kde.discover.desktop,preferred:\/\/filemanager<\/default>/' /usr/share/plasma/plasmoids/org.kde.plasma.taskmanager/contents/config/main.xml && \
+        sed -i '/<entry name="favorites" type="StringList">/,/<\/entry>/ s/<default>[^<]*<\/default>/<default>preferred:\/\/browser,steam.desktop,net.lutris.Lutris.desktop,systemsettings.desktop,org.kde.dolphin.desktop,org.kde.kate.desktop,org.gnome.Ptyxis.desktop,org.kde.discover.desktop,system-update.desktop<\/default>/' /usr/share/plasma/plasmoids/org.kde.plasma.kickoff/contents/config/main.xml && \
         sed -i 's@\[Desktop Action new-window\]@\[Desktop Action new-window\]\nX-KDE-Shortcuts=Ctrl+Alt+T@g' /usr/share/applications/org.gnome.Ptyxis.desktop && \
         sed -i '/^Comment/d' /usr/share/applications/org.gnome.Ptyxis.desktop && \
         sed -i 's@Exec=ptyxis@Exec=kde-ptyxis@g' /usr/share/applications/org.gnome.Ptyxis.desktop && \
         sed -i 's@Keywords=@Keywords=konsole;console;@g' /usr/share/applications/org.gnome.Ptyxis.desktop && \
+        sed -i 's/^Exec=plasma-discover/& --backends flatpak-backend/' /usr/share/applications/org.kde.discover.desktop && \
         cp /usr/share/applications/org.gnome.Ptyxis.desktop /usr/share/kglobalaccel/org.gnome.Ptyxis.desktop && \
         setcap 'cap_net_raw+ep' /usr/libexec/ksysguard/ksgrd_network_helper \
     ; else \
@@ -465,6 +463,9 @@ RUN --mount=type=cache,dst=/var/cache \
             gnome-shell-extension-bazzite-menu \
             gnome-shell-extension-hotedge \
             gnome-shell-extension-caffeine \
+            gnome-shell-extension-restart-to \
+            gnome-shell-extension-burn-my-windows \
+            gnome-shell-extension-desktop-cube \
             rom-properties-gtk3 \
             ibus-mozc \
             openssh-askpass \
@@ -475,9 +476,9 @@ RUN --mount=type=cache,dst=/var/cache \
             gnome-extensions-app \
             gnome-system-monitor \
             gnome-initial-setup \
+            gnome-browser-connector \
             gnome-shell-extension-background-logo \
-            gnome-shell-extension-apps-menu \
-            gnome-software && \
+            gnome-shell-extension-apps-menu && \
         mkdir -p /tmp/tilingshell && \
         curl -s https://api.github.com/repos/domferr/tilingshell/releases/latest | \
             jq -r '.assets | sort_by(.created_at) | .[] | select (.name|test("^tilingshell@.*zip$")) | .browser_download_url' | \
@@ -530,9 +531,6 @@ RUN --mount=type=cache,dst=/var/cache \
     sed -i "s|grub_probe\} --target=device /\`|grub_probe} --target=device /sysroot\`|g" /usr/bin/grub2-mkconfig && \
     rm -f /usr/share/vulkan/icd.d/lvp_icd.*.json && \
     rm -f /usr/lib/systemd/system/service.d/50-keep-warm.conf && \
-    mkdir -p "/etc/profile.d/" && \
-    ln -s "/usr/share/ublue-os/firstboot/launcher/login-profile.sh" \
-    "/etc/profile.d/ublue-firstboot.sh" && \
     mkdir -p "/etc/xdg/autostart" && \
     cp "/usr/share/applications/discover_overlay.desktop" "/etc/xdg/autostart/discover_overlay.desktop" && \
     sed -i 's@Exec=discover-overlay@Exec=/usr/bin/bazzite-discover-overlay@g' /etc/xdg/autostart/discover_overlay.desktop && \
@@ -573,13 +571,24 @@ RUN --mount=type=cache,dst=/var/cache \
     glib-compile-schemas /usr/share/glib-2.0/schemas &>/dev/null && \
     rm -r /tmp/bazzite-schema-test && \
     sed -i 's/stage/none/g' /etc/rpm-ostreed.conf && \
-    sed -i 's@enabled=1@enabled=0@g' /etc/yum.repos.d/_copr_ublue-os-akmods.repo && \
-    for copr in \
+    for repo in \
+        fedora-cisco-openh264 \
+        fedora-steam \
+        fedora-rar \
+        terra \
+        terra-extras \
+        negativo17-fedora-multimedia \
+        _copr_ublue-os-akmods; \
+    do \
+        sed -i 's@enabled=1@enabled=0@g' /etc/yum.repos.d/$repo.repo; \
+    done && for copr in \
         bazzite-org/bazzite \
         bazzite-org/bazzite-multilib \
         ublue-os/staging \
+        ublue-os/packages \
         bazzite-org/LatencyFleX \
         bazzite-org/obs-vkcapture \
+        bazzite-org/vk_hdr_layer \
         bazzite-org/wallpaper-engine-kde-plugin \
         ycollet/audinux \
         bazzite-org/rom-properties \
@@ -588,13 +597,13 @@ RUN --mount=type=cache,dst=/var/cache \
         che/nerd-fonts \
         mavit/discover-overlay \
         lizardbyte/beta \
+        rok/cdemu \
         hikariknight/looking-glass-kvmfr; \
     do \
         dnf5 -y copr disable $copr; \
     done && unset -v copr && \
     dnf5 config-manager setopt "*tailscale*".enabled=0 && \
     dnf5 config-manager setopt "*charm*".enabled=0 && \
-    sed -i 's@enabled=1@enabled=0@g' /etc/yum.repos.d/negativo17-fedora-multimedia.repo && \
     eval "$(/ctx/dnf5-setopt setopt '*negativo17*' enabled=0)" && \
     sed -i 's#/var/lib/selinux#/etc/selinux#g' /usr/lib/python3.*/site-packages/setroubleshoot/util.py && \
     sed -i 's|#default.clock.allowed-rates = \[ 48000 \]|default.clock.allowed-rates = [ 44100 48000 ]|' /usr/share/pipewire/pipewire.conf && \
@@ -635,7 +644,8 @@ RUN --mount=type=cache,dst=/var/cache \
     /ctx/build-initramfs && \
     /ctx/finalize
 
-RUN bootc container lint
+RUN dnf5 config-manager setopt skip_if_unavailable=1 && \
+    bootc container lint
 
 ################
 # DECK BUILDS
@@ -664,6 +674,8 @@ RUN --mount=type=cache,dst=/var/cache \
     --mount=type=bind,from=ctx,source=/,target=/ctx \
     --mount=type=tmpfs,dst=/tmp \
     sed -i 's@enabled=0@enabled=1@g' /etc/yum.repos.d/_copr_ublue-os-akmods.repo && \
+    dnf5 -y copr enable ublue-os/staging && \
+    dnf5 -y copr enable ublue-os/packages && \
     dnf5 -y copr enable bazzite-org/bazzite && \
     dnf5 -y copr enable bazzite-org/bazzite-multilib && \
     dnf5 -y copr enable bazzite-org/LatencyFleX && \
@@ -671,6 +683,7 @@ RUN --mount=type=cache,dst=/var/cache \
     dnf5 -y copr enable bazzite-org/wallpaper-engine-kde-plugin && \
     dnf5 -y copr enable hhd-dev/hhd && \
     dnf5 -y copr enable ycollet/audinux && \
+    dnf5 config-manager unsetopt skip_if_unavailable && \
     /ctx/cleanup
 
 # Configure KDE & GNOME
@@ -711,7 +724,6 @@ RUN --mount=type=cache,dst=/var/cache \
         adjustor \
         acpica-tools \
         vpower \
-        glorpfetch \
         ds-inhibit \
         steam_notif_daemon \
         sdgyrodsu \
@@ -779,6 +791,8 @@ RUN --mount=type=cache,dst=/var/cache \
     sed -i "s/^SCX_SCHEDULER=.*/SCX_SCHEDULER=scx_lavd/" /etc/default/scx && \
     sed -i 's@enabled=0@enabled=1@g' /etc/yum.repos.d/_copr_ublue-os-akmods.repo && \
     for copr in \
+        ublue-os/staging \
+        ublue-os/packages \
         bazzite-org/bazzite \
         bazzite-org/bazzite-multilib \
         bazzite-org/LatencyFleX \
@@ -835,7 +849,8 @@ RUN --mount=type=cache,dst=/var/cache \
     /ctx/build-initramfs && \
     /ctx/finalize
 
-RUN bootc container lint
+RUN dnf5 config-manager setopt skip_if_unavailable=1 && \
+    bootc container lint
 
 FROM ghcr.io/ublue-os/akmods-${NVIDIA_FLAVOR}:${KERNEL_FLAVOR}-${FEDORA_VERSION}-${KERNEL_VERSION} AS nvidia-akmods
 
@@ -861,11 +876,12 @@ ARG VERSION_PRETTY="${VERSION_PRETTY}"
 # Fetch NVIDIA driver
 COPY system_files/nvidia/shared system_files/nvidia/${BASE_IMAGE_NAME} /
 
-# Remove everything that doesn't work well with NVIDIA
+# Remove everything that doesn't work well with NVIDIA, unset skip_if_unavailable option if was set beforehand
 RUN --mount=type=cache,dst=/var/cache \
     --mount=type=cache,dst=/var/log \
     --mount=type=bind,from=ctx,source=/,target=/ctx \
     --mount=type=tmpfs,dst=/tmp \
+    dnf5 config-manager unsetopt skip_if_unavailable && \
     dnf5 -y remove \
         rocm-hip \
         rocm-opencl \
@@ -883,7 +899,7 @@ RUN --mount=type=cache,dst=/var/cache \
     dnf5 -y install \
         mesa-vdpau-drivers.x86_64 \
         mesa-vdpau-drivers.i686 && \
-    curl -Lo /tmp/nvidia-install.sh https://raw.githubusercontent.com/ublue-os/hwe/b3a3dbddf4af81cfbfa7526c1918c9b9f014f86b/nvidia-install.sh && \
+    curl -Lo /tmp/nvidia-install.sh https://raw.githubusercontent.com/ublue-os/main/2b59e2115bc3d90946b314914923f43d38063f89/build_files/nvidia-install.sh && \
     chmod +x /tmp/nvidia-install.sh && \
     IMAGE_NAME="${BASE_IMAGE_NAME}" /tmp/nvidia-install.sh && \
     rm -f /usr/share/vulkan/icd.d/nouveau_icd.*.json && \
@@ -914,4 +930,5 @@ RUN --mount=type=cache,dst=/var/cache \
     /ctx/build-initramfs && \
     /ctx/finalize
 
-RUN bootc container lint
+RUN dnf5 config-manager setopt skip_if_unavailable=1 && \
+    bootc container lint
