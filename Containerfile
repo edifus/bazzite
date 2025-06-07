@@ -579,8 +579,6 @@ RUN --mount=type=cache,dst=/var/cache \
         yt-dlp \
         zig-0.13.0-8.fc42 \
         zsh && \
-    dnf5 -y install --enable-repo="rpmfusion-free,rpmfusion-free-updates,rpmfusion-nonfree,rpmfusion-nonfree-updates" \
-        audactiy-freeworld && \
     dnf5 config-manager addrepo --from-repofile="https://download.docker.com/linux/fedora/docker-ce.repo" && \
     dnf5 config-manager setopt docker-ce-stable.enabled=0 && \
     dnf5 install -y --enable-repo="docker-ce-stable" \
