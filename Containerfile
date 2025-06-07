@@ -544,8 +544,23 @@ RUN --mount=type=cache,dst=/var/cache \
             vlc-plugin-pause-click \
             vlc-plugin-samba && \
         dnf5 -y install \
+            isoimagewriter \
+            kde-partitionmanager \
             kgpg \
             ksystemlog \
+    ; else \
+        eval "$(/ctx/dnf5-setopt setopt '*negativo17*' priority=4 exclude='HandBrake-* mpv vlc*')" && \
+        dnf5 -y install --enable-repo="fedora-multimedia" \
+            HandBrake-cli \
+            HandBrake-gui \
+            mpv \
+            vlc \
+            vlc-plugin-ffmpeg \
+            vlc-plugin-kde \
+            vlc-plugin-pause-click \
+            vlc-plugin-samba && \
+        dnf5 -y install \
+            gnome-disk-utility \
     ; fi && \
     dnf5 -y install \
         android-tools \
@@ -557,18 +572,14 @@ RUN --mount=type=cache,dst=/var/cache \
         fuse-devel \
         fuse3-devel \
         gettext \
-        gnome-disk-utility \
         gparted \
         gtk4-devel \
-        isoimagewriter \
         libadwaita-devel \
-        nmap \
         openrgb \
-        wireshark \
         yt-dlp \
         zig-0.13.0-8.fc42 \
         zsh && \
-    dnf5 -y install --enable-repo="*rpmfusion*" \
+    dnf5 -y install --enable-repo="rpmfusion-free,rpmfusion-free-updates,rpmfusion-nonfree,rpmfusion-nonfree-updates" \
         audactiy-freeworld && \
     dnf5 config-manager addrepo --from-repofile="https://download.docker.com/linux/fedora/docker-ce.repo" && \
     dnf5 config-manager setopt docker-ce-stable.enabled=0 && \
