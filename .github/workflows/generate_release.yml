@@ -28,7 +28,7 @@ jobs:
             TARGET="stable"
           fi
           echo "target=$TARGET" >> $GITHUB_OUTPUT
-      
+
       - name: Generate Release Text
         id: generate-release
         run: |

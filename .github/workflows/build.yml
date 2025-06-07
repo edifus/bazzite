@@ -4,6 +4,7 @@ on:
     - cron: "40 4 * * 1" # 4:40 utc monday
   pull_request:
     branches:
+      - develop
       - testing
       - unstable
     paths-ignore:
@@ -18,6 +19,7 @@ on:
       - ".github/workflows/build_iso.yml"
   push:
     branches:
+      - develop
       - testing
       - unstable
     paths-ignore:
@@ -61,10 +63,13 @@ jobs:
       fail-fast: false
       matrix:
         base_image_flavor: [main]
-        base_name: [bazzite, bazzite-deck, bazzite-nvidia, bazzite-deck-nvidia]
+        #base_name: [bazzite, bazzite-deck, bazzite-nvidia, bazzite-deck-nvidia]
+        base_name: [bazzite, bazzite-nvidia]
         base_image_name: [kinoite, silverblue]
-        target_image_flavor: [main, asus, surface]
-        target_nvidia_flavor: [nvidia, nvidia-open]
+        #target_image_flavor: [main, asus, surface]
+        target_image_flavor: [main]
+        #target_nvidia_flavor: [nvidia, nvidia-open]
+        target_nvidia_flavor: [nvidia-open]
         fedora_version: [42]
         include:
           - fedora_version: 42
@@ -228,7 +233,7 @@ jobs:
               exit 1
             fi
             echo "SOURCE_IMAGE_VERSION=$ver" >> $GITHUB_ENV
-      
+
       # Generate a primary version key that appears
       # in KDE, rpm-ostree status, and github.
       - name: Generate Version
@@ -240,7 +245,7 @@ jobs:
           UPSTREAM_TAG="${{ env.SOURCE_IMAGE_VERSION }}"
           # Remove .0 suffix from upstream tag so we can add our own and
           # the wrong one does not end up in the image.
-          UPSTREAM_TAG="${UPSTREAM_TAG%\.[0-9]}" 
+          UPSTREAM_TAG="${UPSTREAM_TAG%\.[0-9]}"
           FEDORA_VERSION="${{ matrix.fedora_version }}"
           SHA_SHORT="${GITHUB_SHA::7}"
 
@@ -253,6 +258,9 @@ jobs:
           elif [[ ${{ github.ref_name }} == "testing" ]]; then
             VERSION="testing-${UPSTREAM_TAG}"
             PRETTY_VERSION="Testing (F${UPSTREAM_TAG}, #${SHA_SHORT})"
+          elif [[ ${{ github.ref_name }} == "develop" ]]; then
+            VERSION="develop-${UPSTREAM_TAG}"
+            PRETTY_VERSION="Develop (F${UPSTREAM_TAG}, #${SHA_SHORT})"
           else
             VERSION="${UPSTREAM_TAG}"
             PRETTY_VERSION="Stable (F${UPSTREAM_TAG})"
@@ -291,14 +299,14 @@ jobs:
             --target ${{ env.CONTAINER_TARGET }} \
             --build-arg-file build_args.txt \
             --tag raw-img .
-      
+
       - name: Remove auxiliary images
         # We are tight on space, need at least 2x for OSTree
         run: |
           sudo podman image rm ${{ env.PULL_IMAGE_REGISTRY }}/${{ matrix.base_image_name }}-${{ matrix.base_image_flavor }}:${{ matrix.fedora_version }}
           sudo podman image rm ${{ env.PULL_IMAGE_REGISTRY }}/akmods:${{ matrix.kernel_flavor}}-${{ matrix.fedora_version }}-${{ matrix.kernel_version }}
           sudo podman image rm ${{ env.PULL_IMAGE_REGISTRY }}/akmods-${{ matrix.target_nvidia_flavor }}:${{ matrix.kernel_flavor}}-${{ matrix.fedora_version }}-${{ matrix.kernel_version }}
-      
+
       # Generate the previous image reference used by the Rechunker
       - name: Generate previous reference
         id: generate-prev-ref
@@ -357,7 +365,7 @@ jobs:
             org.opencontainers.image.url=https://bazzite.gg
             org.universal-blue.pkg.kernel=<relver:kernel>
             org.universal-blue.pkg.gamescope=<relver:gamescope>
-      
+
       # Generate tags after rechunker runs and checks the primary tag is not duplicated
       # If it is, rechunk will suffix it by .1, .2, etc and put it in steps.rechunk.outputs.version
       - name: Generate tags
@@ -399,6 +407,14 @@ jobs:
             if [ -n "$LATEST" ]; then
                 BUILD_TAGS+=("testing")
             fi
+          elif [[ ${{ github.ref_name }} == "develop" ]]; then
+            # Per fedora version
+            BUILD_TAGS+=("${FEDORA_VERSION}-develop")
+            BUILD_TAGS+=("develop-${FEDORA_VERSION}") # flip ver to be last
+
+            if [ -n "$LATEST" ]; then
+                BUILD_TAGS+=("develop")
+            fi
           else
             BUILD_TAGS+=("${FEDORA_VERSION}")
             BUILD_TAGS+=("stable-${VERSION_TAG}")
@@ -406,12 +422,12 @@ jobs:
             # Per fedora version
             BUILD_TAGS+=("${FEDORA_VERSION}-stable")
             BUILD_TAGS+=("stable-${FEDORA_VERSION}") # flip ver to be last
-            
+
             if [ -n "$LATEST" ]; then
               BUILD_TAGS+=("latest" "stable")
             fi
           fi
-          
+
           echo "Generated the following build tags: "
           for TAG in "${BUILD_TAGS[@]}"; do
               echo "${TAG}"
@@ -441,7 +457,7 @@ jobs:
             echo "${{ secrets.GITHUB_TOKEN }}" | sudo podman login ghcr.io -u ${{ github.actor }} --password-stdin
             for tag in ${{ steps.generate-tags.outputs.alias_tags }}; do
               dest_image="${{ steps.registry_case.outputs.lowercase }}/${{ env.IMAGE_NAME }}:$tag"
-              sudo skopeo copy ${{ steps.rechunk.outputs.ref }} docker://$dest_image && 
+              sudo skopeo copy ${{ steps.rechunk.outputs.ref }} docker://$dest_image &&
                 log_sum "$dest_image"
             done
             log_sum '```'
