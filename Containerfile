@@ -556,7 +556,7 @@ RUN --mount=type=cache,dst=/var/cache \
             mpv \
             vlc \
             vlc-plugin-ffmpeg \
-            vlc-plugin-kde \
+            vlc-plugin-gnome \
             vlc-plugin-pause-click \
             vlc-plugin-samba && \
         dnf5 -y install \
