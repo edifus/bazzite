@@ -558,9 +558,7 @@ RUN --mount=type=cache,dst=/var/cache \
             vlc-plugin-ffmpeg \
             vlc-plugin-gnome \
             vlc-plugin-pause-click \
-            vlc-plugin-samba && \
-        dnf5 -y install \
-            gnome-disk-utility \
+            vlc-plugin-samba \
     ; fi && \
     dnf5 -y install \
         android-tools \

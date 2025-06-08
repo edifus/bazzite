@@ -8,10 +8,15 @@ from collections import defaultdict
 
 REGISTRY = "docker://ghcr.io/edifus/"
 
+#IMAGE_MATRIX = {
+#    "base": ["desktop", "deck", "nvidia-closed", "nvidia-open"],
+#    "de": ["kde", "gnome"],
+#    "image_flavor": ["main", "asus", "surface"],
+#}
 IMAGE_MATRIX = {
-    "base": ["desktop", "deck", "nvidia-closed", "nvidia-open"],
+    "base": ["desktop", "nvidia-open"],
     "de": ["kde", "gnome"],
-    "image_flavor": ["main", "asus", "surface"],
+    "image_flavor": ["main"],
 }
 
 RETRIES = 3
@@ -26,14 +31,20 @@ PATTERN_REMOVE = "\n| ❌ | {name} | {version} | |"
 PATTERN_PKGREL_CHANGED = "{prev} ➡️ {new}"
 PATTERN_PKGREL = "{version}"
 COMMON_PAT = "### All Images\n| | Name | Previous | New |\n| --- | --- | --- | --- |{changes}\n\n"
+#OTHER_NAMES = {
+#    "desktop": "### Desktop Images\n| | Name | Previous | New |\n| --- | --- | --- | --- |{changes}\n\n",
+#    "deck": "### Deck Images\n| | Name | Previous | New |\n| --- | --- | --- | --- |{changes}\n\n",
+#    "kde": "### KDE Images\n| | Name | Previous | New |\n| --- | --- | --- | --- |{changes}\n\n",
+#    "gnome": "### Gnome Images\n| | Name | Previous | New |\n| --- | --- | --- | --- |{changes}\n\n",
+#    "nvidia": "### Nvidia Images\n| | Name | Previous | New |\n| --- | --- | --- | --- |{changes}\n\n",
+#    "asus": "### Asus Images\n| | Name | Previous | New |\n| --- | --- | --- | --- |{changes}\n\n",
+#    "surface": "### Surface Images\n| | Name | Previous | New |\n| --- | --- | --- | --- |{changes}\n\n",
+#}
 OTHER_NAMES = {
     "desktop": "### Desktop Images\n| | Name | Previous | New |\n| --- | --- | --- | --- |{changes}\n\n",
-    "deck": "### Deck Images\n| | Name | Previous | New |\n| --- | --- | --- | --- |{changes}\n\n",
     "kde": "### KDE Images\n| | Name | Previous | New |\n| --- | --- | --- | --- |{changes}\n\n",
     "gnome": "### Gnome Images\n| | Name | Previous | New |\n| --- | --- | --- | --- |{changes}\n\n",
     "nvidia": "### Nvidia Images\n| | Name | Previous | New |\n| --- | --- | --- | --- |{changes}\n\n",
-    "asus": "### Asus Images\n| | Name | Previous | New |\n| --- | --- | --- | --- |{changes}\n\n",
-    "surface": "### Surface Images\n| | Name | Previous | New |\n| --- | --- | --- | --- |{changes}\n\n",
 }
 
 COMMITS_FORMAT = "### Commits\n| Hash | Subject |\n| --- | --- |{commits}\n\n"
