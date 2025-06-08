@@ -480,9 +480,9 @@ jobs:
           tags: ${{ steps.digest.outputs.digest }}
           registry: ${{ env.PUSH_IMAGE_REGISTRY }}
 
-  generate_release:
-    name: Generate Release
-    needs: [push-ghcr]
-    if: github.event_name != 'pull_request'
-    secrets: inherit
-    uses: ./.github/workflows/generate_release.yml
+  #generate_release:
+  #  name: Generate Release
+  #  needs: [push-ghcr]
+  #  if: github.event_name != 'pull_request'
+  #  secrets: inherit
+  #  uses: ./.github/workflows/generate_release.yml

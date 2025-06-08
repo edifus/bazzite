@@ -39,11 +39,11 @@ jobs:
           echo "title=${TITLE}" >> $GITHUB_OUTPUT
           echo "tag=${TAG}" >> $GITHUB_OUTPUT
 
-      #- name: Create Release
-      #  uses: softprops/action-gh-release@da05d552573ad5aba039eaac05058a918a7bf631 # v2
-      #  with:
-      #    name: ${{ steps.generate-release.outputs.title }}
-      #    tag_name: ${{ steps.generate-release.outputs.tag }}
-      #    body_path: ./changelog.md
-      #    make_latest: ${{ steps.get-target.outputs.target == 'stable' }}
-      #    prerelease: ${{ steps.get-target.outputs.target != 'stable' }}
+      - name: Create Release
+        uses: softprops/action-gh-release@da05d552573ad5aba039eaac05058a918a7bf631 # v2
+        with:
+          name: ${{ steps.generate-release.outputs.title }}
+          tag_name: ${{ steps.generate-release.outputs.tag }}
+          body_path: ./changelog.md
+          make_latest: ${{ steps.get-target.outputs.target == 'stable' }}
+          prerelease: ${{ steps.get-target.outputs.target != 'stable' }}
