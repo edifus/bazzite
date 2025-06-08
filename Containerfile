@@ -585,6 +585,9 @@ RUN --mount=type=cache,dst=/var/cache \
         docker-ce-cli \
         docker-compose-plugin && \
     dnf5 -y group install --with-optional virtualization && \
+    dnf5 config-manager addrepo --from-repofile="https://fedorapeople.org/groups/virt/virtio-win/virtio-win.repo" && \
+    dnf5 config-manager setopt virtio-win-stable.enabled=0 && \
+    dnf5 -y install --enable-repo="virtio-win-latest" virtio-win && \
     systemctl enable docker.service libvirtd.service && \
     git clone https://github.com/ghostty-org/ghostty /ghostty && \
     cd /ghostty && git checkout v1.1.3 && \
