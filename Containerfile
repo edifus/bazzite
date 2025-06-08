@@ -573,7 +573,6 @@ RUN --mount=type=cache,dst=/var/cache \
         gparted \
         gtk4-devel \
         libadwaita-devel \
-        openrgb \
         yt-dlp \
         zig-0.13.0-8.fc42 \
         zsh && \
