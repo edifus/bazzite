@@ -585,6 +585,8 @@ RUN --mount=type=cache,dst=/var/cache \
         docker-ce \
         docker-ce-cli \
         docker-compose-plugin && \
+    dnf5 -y group install --with-optional virtualization && \
+    systemctl enable docker.service libvirtd.service && \
     git clone https://github.com/ghostty-org/ghostty /ghostty && \
     cd /ghostty && git checkout v1.1.3 && \
     zig build --prefix /usr \
