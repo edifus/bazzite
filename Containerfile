@@ -49,6 +49,9 @@ FROM ghcr.io/ublue-os/akmods-extra:${KERNEL_FLAVOR}-${FEDORA_VERSION}-${KERNEL_V
 FROM scratch AS ctx
 COPY build_files /
 
+FROM scratch AS custom
+COPY custom_files /
+
 ################
 # DESKTOP BUILDS
 ################
@@ -520,6 +523,84 @@ RUN --mount=type=cache,dst=/var/cache \
     dnf5 install -y --enable-repo=copr:copr.fedorainfracloud.org:ublue-os:packages \
         ublue-os-media-automount-udev && \
     { systemctl enable ublue-os-media-automount.service || true; } && \
+    /ctx/cleanup
+
+# custom steps
+# Install Docker, Ghostty, and extra system packages
+RUN --mount=type=cache,dst=/var/cache \
+    --mount=type=cache,dst=/var/log \
+    --mount=type=bind,from=custom,source=/,target=/custom \
+    --mount=type=bind,from=ctx,source=/,target=/ctx \
+    --mount=type=tmpfs,dst=/tmp \
+    mkdir /nix && cp -afrv /custom/system_files/* / && \
+    if grep -q "kinoite" <<< "${BASE_IMAGE_NAME}"; then \
+        dnf5 -y install --enable-repo="*fedora-multimedia*" \
+            HandBrake-cli \
+            HandBrake-gui \
+            mpv \
+            vlc \
+            vlc-plugin-ffmpeg \
+            vlc-plugin-kde \
+            vlc-plugin-pause-click \
+            vlc-plugin-samba && \
+        dnf5 -y install \
+            isoimagewriter \
+            kde-partitionmanager \
+            kgpg \
+            ksystemlog \
+    ; else \
+        eval "$(/ctx/dnf5-setopt setopt '*negativo17*' priority=4 exclude='HandBrake-* mpv vlc*')" && \
+        dnf5 -y install --enable-repo="fedora-multimedia" \
+            HandBrake-cli \
+            HandBrake-gui \
+            mpv \
+            vlc \
+            vlc-plugin-ffmpeg \
+            vlc-plugin-gnome \
+            vlc-plugin-pause-click \
+            vlc-plugin-samba \
+    ; fi && \
+    dnf5 -y install \
+        android-tools \
+        aria2 \
+        bchunk \
+        bleachbit \
+        blueprint-compiler \
+        fuse-btfs \
+        fuse-devel \
+        fuse3-devel \
+        gettext \
+        gparted \
+        gtk4-devel \
+        libadwaita-devel \
+        yt-dlp \
+        zig-0.13.0-8.fc42 \
+        zsh && \
+    dnf5 config-manager addrepo --from-repofile="https://download.docker.com/linux/fedora/docker-ce.repo" && \
+    dnf5 config-manager setopt docker-ce-stable.enabled=0 && \
+    dnf5 install -y --enable-repo="docker-ce-stable" \
+        containerd.io \
+        docker-buildx-plugin \
+        docker-ce \
+        docker-ce-cli \
+        docker-compose-plugin && \
+    dnf5 -y group install --with-optional virtualization && \
+    dnf5 config-manager addrepo --from-repofile="https://fedorapeople.org/groups/virt/virtio-win/virtio-win.repo" && \
+    dnf5 config-manager setopt virtio-win-stable.enabled=0 && \
+    dnf5 -y install --enable-repo="virtio-win-latest" virtio-win && \
+    systemctl enable docker.service libvirtd.service && \
+    git clone https://github.com/ghostty-org/ghostty /ghostty && \
+    cd /ghostty && git checkout v1.1.3 && \
+    zig build --prefix /usr \
+        -Doptimize=ReleaseFast -Dcpu=baseline && \
+    cd / && rm -rf /ghostty /root/.cache/zig && \
+    for dir in /var/opt/*/; do \
+        [ -d "$dir" ] || continue && \
+        dirname=$(basename "$dir") && \
+        mv "$dir" "/usr/lib/opt/$dirname" && \
+        echo "L+ /var/opt/$dirname - - - - /usr/lib/opt/$dirname" >> /usr/lib/tmpfiles.d/opt-dir-fix.conf \
+    ; done && \
+    echo 'import "/usr/share/custom/just/999-custom.just"' >> /usr/share/ublue-os/justfile && \
     /ctx/cleanup
 
 # Cleanup & Finalize

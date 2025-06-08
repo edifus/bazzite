@@ -1,7 +1,7 @@
-repositoryID: 6f68e5bb-ffaf-4a70-9c1b-b154b772044e
+repositoryID: 11111111-1111-1111-1111-111111111111
 owners: # (optional, used to claim repository ownership)
-  - name: Jorge Castro
-    email: jorge.castro@gmail.com
+  - name: edifus
+    email: edifus@gmail.com
 #ignore: # (optional, packages that should not be indexed by Artifact Hub)
 #  - name: package1
 #  - name: package2 # Exact match
